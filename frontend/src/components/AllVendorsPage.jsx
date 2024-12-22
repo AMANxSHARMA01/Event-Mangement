@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate} from "react-router-dom";
 import Navbar from "./Navbar";
+import CartButton from "./CartButton";
 
 const AllVendorsPage = () => {
   const { category } = useParams();  // Get the category from the URL
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -31,6 +33,7 @@ const AllVendorsPage = () => {
     <div className="flex flex-col h-screen justify-between bg-slate-50 px-20">
       <div className="flex flex-col max-w-4xl mx-auto w-full">
         <Navbar />
+        <CartButton/>
           <div className="text-2xl font-bold text-center my-6 ">{category ? category.charAt(0).toUpperCase() + category.slice(1) : "Vendors"}</div>
 
       {loading ? (

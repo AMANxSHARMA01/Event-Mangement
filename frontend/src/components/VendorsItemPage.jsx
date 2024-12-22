@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { useCart } from "../context/CartContext";
+import CartButton from "./CartButton";
 
 const VendorItemsPage = () => {
   const { vendorId } = useParams(); // Get vendorId from URL
@@ -13,10 +14,9 @@ const VendorItemsPage = () => {
 
   // Add item to cart and navigate to cart page
   const handleAddToCart = (item) => {
+    console.log(item)
     addToCart({
       id: item._id,
-      name: item.name,
-      price: item.price,
       quantity: 1, // Default quantity
     });
    
@@ -53,12 +53,7 @@ const VendorItemsPage = () => {
   return (
     <div className="flex flex-col h-screen justify-between bg-slate-50 px-20">
       <Navbar />
-    <button
-    onClick={() => navigate("/cart")} // Navigate to the cart page
-    className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition"
-  >
-    🛒 View Cart
-  </button>
+    <CartButton/>
       {loading ? (
         <div className="flex justify-center items-center py-20">
           <span className="text-xl font-semibold">Loading...</span>

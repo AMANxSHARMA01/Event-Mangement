@@ -18,7 +18,7 @@ export const CartProvider = ({ children }) => {
   // Fetch cart data when user.id changes
   useEffect(() => {
     const fetchCart = async () => {
-      if (!user.id) {
+      if (user && !user.id) {
         console.warn('User ID is not set. Cannot fetch cart.');
         return;
       }
@@ -66,7 +66,7 @@ export const CartProvider = ({ children }) => {
 
       const data = await response.json();
       setCartItems(data.items || []);
-      console.log(data)
+      
       calculateTotal(data.items || []);
     } catch (err) {
       console.error('Error adding item to cart:', err.message);

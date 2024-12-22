@@ -1,6 +1,8 @@
 const express = require("express");
+const mongoose = require('mongoose');
 const router = express.Router();
 const Cart = require("../models/cart"); // Import the Cart model
+const Item =require("../models/item")
 
 // Get Cart for a particular user
 
@@ -22,10 +24,16 @@ router.get("/:userId", (req, res) => {
 // Route to add an item to the cart
 router.post("/:userId/add", async (req, res) => {
   const { userId } = req.params;
-  const { itemId, name, quantity, price } = req.body; // Extract data from the request body
+  const { id, quantity } = req.body; // Assume `itemId` and `quantity` are sent in the request body
 
   try {
-    // Find the user's cart or create a new one if it doesn't exist
+    // Find the item in the database to retrieve its vendorId
+    const item = await Item.findById(id);
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    // Find the user's cart or create a new one
     let cart = await Cart.findOne({ userId });
     if (!cart) {
       cart = new Cart({ userId, items: [] });
@@ -33,7 +41,7 @@ router.post("/:userId/add", async (req, res) => {
 
     // Check if the item already exists in the cart
     const existingItemIndex = cart.items.findIndex(
-      (item) => item._id.toString() === itemId
+      (cartItem) => cartItem._id === id
     );
 
     if (existingItemIndex >= 0) {
@@ -41,19 +49,19 @@ router.post("/:userId/add", async (req, res) => {
       cart.items[existingItemIndex].quantity += quantity;
     } else {
       // If it's a new item, add it to the cart
-      cart.items.push({ itemId, name, quantity, price });
+      cart.items.push({
+        itemId: item._id,
+        name: item.name,
+        quantity,
+        price: item.price,
+        vendorId: item.vendorId, // Add the vendorId from the Item model
+      });
     }
 
     // Save the cart to the database
     await cart.save();
 
-    // Calculate the total price
-    const totalPrice = cart.items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-
-    res.status(200).json({ items: cart.items, totalPrice });
+    res.status(200).json({ items: cart.items });
   } catch (err) {
     console.error("Error adding item to cart:", err);
     res.status(500).json({ error: "Failed to add item to cart" });
@@ -61,44 +69,75 @@ router.post("/:userId/add", async (req, res) => {
 });
 
 // Route to remove an item from the cart
-router.delete("/:userId/remove/:id", (req, res) => {
+router.delete("/:userId/remove/:id", async (req, res) => {
   const { userId, id } = req.params;
 
-  // Initialize cart if it doesn't exist
-  if (!Cart[userId]) {
-    Cart[userId] = { items: [] };
+  try {
+    // Find the user's cart
+    const cart = await Cart.findOne({ userId });
+
+    if (!cart) {
+      return res.status(404).json({ error: 'Cart not found' });
+    }
+
+    // Find the index of the item to remove
+    const itemIndex = cart.items.findIndex((item) => item._id.toString() === id);
+
+    if (itemIndex === -1) {
+      return res.status(404).json({ error: 'Item not found in the cart' });
+    }
+
+    // Remove the item from the cart
+    cart.items.splice(itemIndex, 1);
+
+    // Save the updated cart
+    await cart.save();
+
+    // Recalculate the total price
+    const totalPrice = cart.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+    res.json({ items: cart.items, totalPrice });
+  } catch (err) {
+    console.error('Error removing item:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  // Remove item from the cart
-  const cart = Cart[userId];
-  cart.items = cart.items.filter((item) => item.productId !== parseInt(id));
-
-  const totalPrice = calculateTotal(cart.items);
-  res.json({ items: cart.items, totalPrice });
 });
 
 // Route to update item quantity in the cart
-router.put("/:userId/update/:id", (req, res) => {
+router.put("/:userId/update/:id", async (req, res) => {
   const { userId, id } = req.params;
   const { quantity } = req.body;
 
-  // Initialize cart if it doesn't exist
-  if (!Cart[userId]) {
-    Cart[userId] = { items: [] };
-  }
+  try {
+    // Find the user's cart
+    const cart = await Cart.findOne({ userId });
 
-  // Update the item's quantity
-  const cart = Cart[userId];
-  const itemIndex = cart.items.findIndex(
-    (item) => item.productId === parseInt(id)
-  );
+    if (!cart) {
+      return res.status(404).json({ error: 'Cart not found' });
+    }
 
-  if (itemIndex >= 0) {
+    // Find the index of the item to update
+    const itemIndex = cart.items.findIndex((item) => item._id.toString() === id);
+
+    if (itemIndex === -1) {
+      return res.status(404).json({ error: 'Item not found in the cart' });
+    }
+
+    // Update the item's quantity
     cart.items[itemIndex].quantity = quantity;
-  }
 
-  const totalPrice = calculateTotal(cart.items);
-  res.json({ items: cart.items, totalPrice });
+    // Save the updated cart
+    await cart.save();
+
+    // Recalculate the total price
+    const totalPrice = cart.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+    // Send the updated cart and total price
+    res.json({ items: cart.items, totalPrice });
+  } catch (err) {
+    console.error('Error updating item quantity:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Route to delete all items from the cart
