@@ -37,7 +37,7 @@ function Login({ heading, apiEndpoint, redirectPath, role }) {
 
       if (response.ok) {
         alert("Login successful!");
-        setUser({ name: data.name, email: data.email, role: role });
+        setUser({id:data.id,name: data.name, email: data.email, role: role });
         navigate(redirectPath);
       } else {
         setError(data.error || "Invalid email or password!");

@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate} from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useUser } from "../context/UserContext";
 
 const User = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const { user } = useUser();
+  const navigate = useNavigate();
 
   // Toggle the dropdown menu
   const handleDropdown = () => {
@@ -16,6 +17,13 @@ const User = () => {
     <div className="flex flex-col h-screen justify-between bg-slate-50 px-20">
     <div className="flex flex-col max-w-4xl mx-auto w-full">
       <Navbar />
+       {/* Cart Button */}
+  <button
+    onClick={() => navigate("/cart")} // Navigate to the cart page
+    className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition"
+  >
+    🛒 View Cart
+  </button>
       <div className="text-2xl font-bold text-center my-6 ">
           WELCOME {user ? user.name : "User"}
         </div>
